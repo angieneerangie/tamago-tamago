@@ -32,16 +32,19 @@ class Tamagotchi:
             return "🙂 (•_•)"
 
     def feed(self):
-        if not self.is_alive: return
+        if not self.is_alive:
+            return
         self.hunger = min(100, self.hunger + 20)
 
     def play(self):
-        if not self.is_alive or self.energy < 20: return
+        if not self.is_alive or self.energy < 20:
+            return
         self.happiness = min(100, self.happiness + 20)
         self.energy = max(0, self.energy - 20)
 
     def sleep(self):
-        if not self.is_alive: return
+        if not self.is_alive:
+            return
         self.energy = min(100, self.energy + 30)
 
     def decay(self):
@@ -86,12 +89,46 @@ class Tamagotchi:
                 self.__dict__.update(state)
 
 # Streamlit app
-if "pet" not in st.session_state:
+
+if "pet" not in st.session_state and "just_created" not in st.session_state:
     name = st.text_input("Name your Tamagotchi", "")
     if name:
         st.session_state.pet = Tamagotchi(name)
+        st.session_state.just_created = True
         st.experimental_rerun()
+
+elif "just_created" in st.session_state:
+    del st.session_state.just_created
+    pet = st.session_state.pet
+
+    st.title(f"Tamagotchi - {pet.name}")
+    st.markdown(f"### {pet.get_face()}")
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Hunger", f"{pet.hunger}/100")
+    col2.metric("Happiness", f"{pet.happiness}/100")
+    col3.metric("Energy", f"{pet.energy}/100")
+    st.markdown(f"**Age:** {pet.age}")
+
+    if not pet.is_alive:
+        st.error(f"{pet.name} has passed away. 💀 Game over.")
+    else:
+        if st.button("🍗 Feed"):
+            pet.feed()
+        if st.button("🎾 Play"):
+            pet.play()
+        if st.button("💤 Nap"):
+            pet.sleep()
+        if st.button("⏩ Time passes"):
+            pet.decay()
+            event = pet.random_event()
+            if event:
+                st.info(f"Random Event: {event}")
+
+        pet.decay()
+        pet.save_state()
 else:
+    # Se la pet esiste già
     pet = st.session_state.pet
 
     st.title(f"Tamagotchi - {pet.name}")
